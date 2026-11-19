@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type Ref } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type Ref } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
@@ -152,6 +152,13 @@ function WorkDetail({
   const viewRef = useRef<HTMLDivElement>(null)
   const stripRef = useRef<HTMLDivElement>(null)
   const [travel, setTravel] = useState(0)
+  const closeRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null
+    closeRef.current?.focus()
+    return () => opener?.focus()
+  }, [])
 
   useEffect(() => {
     const strip = stripRef.current
@@ -190,7 +197,7 @@ function WorkDetail({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.35, ease: EASE }}
     >
-      <button className="wk-detail-close" onClick={onClose} aria-label={data.closeLabel}>
+      <button className="wk-detail-close" ref={closeRef} onClick={onClose} aria-label={data.closeLabel}>
         ✕
       </button>
 
@@ -212,7 +219,7 @@ function WorkDetail({
         )}
       </article>
 
-      <div className="wk-detail-track" ref={trackRef} style={{ height: `calc(100vh + ${travel}px)` }}>
+      <div className="wk-detail-track" ref={trackRef} style={{ '--travel': `${travel}px` } as CSSProperties}>
         <div className="wk-detail-view" ref={viewRef}>
           <div className="wk-detail-strip" ref={stripRef}>
             {photos.map((p, i) => (
@@ -248,11 +255,11 @@ export default function Works({ lang, innerRef }: { lang: 'en'; innerRef: Ref<HT
     setActive(item)
   }
 
-  const close = () => {
+  const close = useCallback(() => {
     if (history.state?.work) return history.back()
     history.replaceState(null, '', location.pathname + location.search)
     setActive(null)
-  }
+  }, [])
 
   useEffect(() => {
     const showLinked = () => {
@@ -277,7 +284,7 @@ export default function Works({ lang, innerRef }: { lang: 'en'; innerRef: Ref<HT
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = prev
     }
-  }, [active])
+  }, [active, close])
 
   const section = sections[current]
 

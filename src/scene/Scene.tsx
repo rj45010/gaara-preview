@@ -1,7 +1,7 @@
 import { Suspense, useMemo, useRef, useEffect, type MutableRefObject } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
-import { EffectComposer, Bloom, DepthOfField, SMAA } from '@react-three/postprocessing'
+import { EffectComposer, Bloom, SMAA } from '@react-three/postprocessing'
 import * as THREE from 'three'
 import { FOCUS_POINTS, FRAMES_PER_NODE } from '../data/focusPoints'
 
@@ -48,14 +48,8 @@ function Lights() {
 // me.glb：模型 + glb 自带相机动画（滚动分 5 段擦除）+ 自动对焦 + 眼睛跟随
 function Man2({
   focusRef,
-  frameRef,
-  dofBokehRef,
-  dofRangeRef,
 }: {
   focusRef: MutableRefObject<THREE.Vector3>
-  frameRef: MutableRefObject<number>
-  dofBokehRef: MutableRefObject<number>
-  dofRangeRef: MutableRefObject<number>
 }) {
   const posX = 0
   const posY = 0.4
@@ -90,7 +84,7 @@ function Man2({
   const { scene, animations } = useGLTF(MODEL_URL)
 
   // 克隆模型；收集眼睛对象、聚焦锚点对象、glb 自带相机、各锚点景深开关
-  const { model, eyes, points, startPoint, glbCam, focusNode, dof } = useMemo(() => {
+  const { model, eyes, points, startPoint, glbCam, focusNode } = useMemo(() => {
     const clone = scene.clone(true)
     const eyes: any[] = []
     const pmap: Record<string, any> = {}
@@ -138,12 +132,6 @@ function Man2({
     const works = focusNode || pts[pts.length - 1] || null
     // 首页锚点：focus-start / focus-0；都没有则回退首个时间轴节点。
     const start = startPoint || pts[0] || null
-    // 逐锚点景深参数（intro3d 导出写入 userData/extras）：dofBokeh 虚化强度、dofFocusRange 清晰范围、
-    // dofEnabled 开关（关→有效 bokeh 记 0）。has=false（老 glb 无这些字段）→ Post2 走原全局帧混合，行为不变。
-    const ud = (o: any): any => o?.userData ?? {}
-    const hasDofParams = [...pts, start, works].some((o) => ud(o).dofBokeh !== undefined)
-    const effBokeh = (o: any): number => (ud(o).dofEnabled === false ? 0 : (ud(o).dofBokeh ?? 0))
-    const effRange = (o: any): number => ud(o).dofFocusRange ?? 0
     return {
       model: clone,
       eyes,
@@ -151,15 +139,6 @@ function Man2({
       startPoint: start,
       glbCam,
       focusNode: works,
-      dof: {
-        has: hasDofParams,
-        bokeh: pts.map(effBokeh),
-        range: pts.map(effRange),
-        startBokeh: effBokeh(start),
-        startRange: effRange(start),
-        worksBokeh: effBokeh(works),
-        worksRange: effRange(works),
-      },
     }
   }, [scene])
 
@@ -315,7 +294,6 @@ function Man2({
       }
       mixer.update(0)
     }
-    if (frameRef) frameRef.current = frame
 
     // 履历段用于对焦的连续索引：由平滑后的帧反推，确保对焦与镜头同步
     const s = THREE.MathUtils.clamp(frame / FRAMES_PER_NODE - 1, -1, M - 1)
@@ -342,25 +320,6 @@ function Man2({
       }
     }
 
-    // 3b) 景深：glb 带逐锚点参数（intro3d 导出）时，沿当前连续索引在相邻锚点间插值 bokeh/focusRange，
-    //     写入 refs 供 Post2 直接采用（忠实还原 intro3d）；无参数（老 glb）则写哨兵 -1 → Post2 走原全局帧混合。
-    if (dofBokehRef && dofRangeRef) {
-      if (!dof.has) {
-        dofBokehRef.current = -1
-      } else {
-        const sample = (arr: number[], sv: number, wv: number): number => {
-          if (inWorks) return wv
-          if (s < 0) return THREE.MathUtils.lerp(sv, arr[0] ?? sv, THREE.MathUtils.clamp(s + 1, 0, 1))
-          const sc = THREE.MathUtils.clamp(s, 0, M - 1)
-          const iA = Math.floor(sc)
-          const iB = Math.min(iA + 1, M - 1)
-          return THREE.MathUtils.lerp(arr[iA] ?? 0, arr[iB] ?? 0, sc - iA)
-        }
-        dofBokehRef.current = sample(dof.bokeh, dof.startBokeh, dof.worksBokeh)
-        // focusRange 按模型 group 缩放折算到世界单位（scene 被放大 scale 倍，清晰范围需同比放大才与 intro3d 观感一致）。
-        dofRangeRef.current = sample(dof.range, dof.startRange, dof.worksRange) * scale
-      }
-    }
 
     // 2b) 拷贝 glb 相机世界变换到默认相机，并绕焦点做轨道式鼠标视差（焦点屏幕位置不变）
     const camera: any = get().camera
@@ -444,70 +403,10 @@ function Man2({
   )
 }
 
-// 后处理：DepthOfField → Bloom → SMAA。
-// DoF 焦点逐帧跟随 focusRef（自动对焦）；30–220 帧间收紧清晰范围、加大虚化。
-function Post2({
-  focusRef,
-  frameRef,
-  dofBokehRef,
-  dofRangeRef,
-}: {
-  focusRef: MutableRefObject<THREE.Vector3>
-  frameRef: MutableRefObject<number>
-  dofBokehRef: MutableRefObject<number>
-  dofRangeRef: MutableRefObject<number>
-}) {
-  const post = {
-    bloomIntensity: 0.6,
-    bloomThreshold: 0.82,
-    dof: false,
-    startBokeh: 7.4,
-    startRange: 2.0,
-    focusBokeh: 11.0,
-    focusRange: 0.15,
-    startBlendFrame: 48,
-    endBlendFrame: RESUME_FRAMES - 50, // 末节点附近回到"起始帧"景深档（原 250−50=200）
-  }
-
-  const dofRef = useRef<any>(null)
-  useFrame(() => {
-    const e = dofRef.current
-    if (!e) return
-    if (e.target && focusRef) e.target.copy(focusRef.current)
-    // 权重 w=1 用"开始帧档"，w=0 用"聚焦点档"。
-    // 开头(f→0)和末节点(f→RESUME_FRAMES)都取开始帧档；中间各节点取聚焦点档。
-    const f = frameRef ? frameRef.current : 0
-    const wStart = 1 - THREE.MathUtils.smoothstep(f, 0, post.startBlendFrame)
-    const wEnd = THREE.MathUtils.smoothstep(f, post.endBlendFrame, RESUME_FRAMES)
-    const w = Math.max(wStart, wEnd)
-    if (dofBokehRef && dofBokehRef.current >= 0) {
-      // glb 自带逐锚点景深参数（intro3d 导出）：直接采用，忠实还原 intro3d 的虚化强度/清晰范围（bokeh=0 即该点关景深）。
-      e.bokehScale = dofBokehRef.current
-      if (e.cocMaterial) e.cocMaterial.focusRange = Math.max(1e-4, dofRangeRef ? dofRangeRef.current : post.focusRange)
-    } else {
-      // 老 glb（无逐锚点参数）：沿用原全局帧混合档位。
-      e.bokehScale = THREE.MathUtils.lerp(post.focusBokeh, post.startBokeh, w)
-      if (e.cocMaterial) e.cocMaterial.focusRange = THREE.MathUtils.lerp(post.focusRange, post.startRange, w)
-    }
-  })
-
+function Post2() {
   return (
     <EffectComposer multisampling={0} stencilBuffer={false} depthBuffer>
-      {(post.dof ? (
-        <DepthOfField
-          ref={dofRef}
-          target={[0, 1.3, 0]}
-          worldFocusRange={post.focusRange}
-          bokehScale={post.focusBokeh}
-          height={480}
-        />
-      ) : null) as any}
-      <Bloom
-        mipmapBlur
-        intensity={post.bloomIntensity}
-        luminanceThreshold={post.bloomThreshold}
-        luminanceSmoothing={0.3}
-      />
+      <Bloom mipmapBlur intensity={0.6} luminanceThreshold={0.82} luminanceSmoothing={0.3} />
       <SMAA />
     </EffectComposer>
   )
@@ -516,18 +415,14 @@ function Post2({
 // 场景根组件：展示 me.glb（相机由 glb 动画 + 滚动驱动）
 export default function Scene() {
   const focusRef = useRef(new THREE.Vector3(0, 1.3, 0))
-  const frameRef = useRef(0)
-  // 逐锚点景深（intro3d 导出的 glb 携带）：Man2 每帧写、Post2 读。dofBokeh=-1 表示无参数 → Post2 走旧全局混合。
-  const dofBokehRef = useRef(-1)
-  const dofRangeRef = useRef(0.15)
   return (
     <>
       <Suspense fallback={null}>
         <Lights />
-        <Man2 focusRef={focusRef} frameRef={frameRef} dofBokehRef={dofBokehRef} dofRangeRef={dofRangeRef} />
+        <Man2 focusRef={focusRef} />
       </Suspense>
 
-      <Post2 focusRef={focusRef} frameRef={frameRef} dofBokehRef={dofBokehRef} dofRangeRef={dofRangeRef} />
+      <Post2 />
     </>
   )
 }

@@ -8,3 +8,5 @@ The scroll-driven 3D scene is built on [sen-3d-resume](https://github.com/dayinj
 npm install
 npm run dev
 ```
+
+The gallery model is committed at `public/models/shrishti.glb`. `npm run model` rebuilds it with Blender, but it needs the bust source `refs/shrishti.glb`, which is private and not in this repo.

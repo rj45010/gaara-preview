@@ -1242,13 +1242,17 @@ canvas {
 }
 
 /* Vertical scroll drives the photo row sideways while this panel is pinned */
+/* svh: the visible height on mobile Safari, not the height under the address bar */
 .wk-detail-track {
   flex: none;
+  height: calc(100vh + var(--travel, 0px));
+  height: calc(100svh + var(--travel, 0px));
 }
 .wk-detail-view {
   position: sticky;
   top: 0;
   height: 100vh;
+  height: 100svh;
   overflow: hidden;
   display: flex;
   align-items: center;
