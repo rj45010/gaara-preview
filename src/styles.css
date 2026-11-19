@@ -520,10 +520,17 @@ canvas {
   position: relative;
   min-height: 100vh;
   padding: clamp(72px, 14vh, 150px) clamp(20px, 6vw, 96px) clamp(72px, 12vh, 130px);
+  /* Phones get a tint only: a full-screen blur over the live canvas costs too much there */
+  background: rgba(10, 13, 20, 0.82);
+}
+
+@media (min-width: 900px) {
   /* Frosted over the gallery, so the room stays faintly visible behind the CV */
-  background: rgba(10, 13, 20, 0.45);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
+  .cv {
+    background: rgba(10, 13, 20, 0.45);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+  }
 }
 
 .cv-title {

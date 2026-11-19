@@ -215,8 +215,8 @@ function WorkDetail({
       <div className="wk-detail-track" ref={trackRef} style={{ height: `calc(100vh + ${travel}px)` }}>
         <div className="wk-detail-view" ref={viewRef}>
           <div className="wk-detail-strip" ref={stripRef}>
-            {photos.map((p) => (
-              <img key={p.src} src={p.src} alt={p.alt} />
+            {photos.map((p, i) => (
+              <img key={p.src} src={p.src} alt={p.alt} loading={i < 2 ? 'eager' : 'lazy'} />
             ))}
           </div>
         </div>
@@ -255,12 +255,16 @@ export default function Works({ lang, innerRef }: { lang: 'en'; innerRef: Ref<HT
   }
 
   useEffect(() => {
-    const slug = location.hash.slice(1)
-    const linked = sections.flatMap((s) => s.items ?? []).find((it) => it.slug === slug)
-    if (linked) setActive(linked)
-    const onPop = () => setActive(null)
-    window.addEventListener('popstate', onPop)
-    return () => window.removeEventListener('popstate', onPop)
+    const showLinked = () => {
+      const slug = location.hash.slice(1)
+      const year = sections.findIndex((s) => s.items?.some((it) => it.slug === slug))
+      if (year < 0) return setActive(null)
+      setCurrent(year)
+      setActive(sections[year].items?.find((it) => it.slug === slug) ?? null)
+    }
+    showLinked()
+    window.addEventListener('popstate', showLinked)
+    return () => window.removeEventListener('popstate', showLinked)
   }, [sections])
 
   useEffect(() => {
