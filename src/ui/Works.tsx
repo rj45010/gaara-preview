@@ -156,7 +156,7 @@ function WorkDetail({
 
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null
-    closeRef.current?.focus()
+    closeRef.current?.focus({ focusVisible: false } as FocusOptions)
     return () => opener?.focus()
   }, [])
 
