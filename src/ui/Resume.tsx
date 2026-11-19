@@ -23,9 +23,61 @@ interface ResumeEntry {
   points?: string[]
   groups?: ResumeGroup[]
 }
-const RESUME: Record<'en', { title: string; entries: ResumeEntry[] }> = {
+const CV: ResumeGroup[] = [
+  {
+    heading: 'Study',
+    rows: [
+      { year: '2026', what: 'MFA, Art, Media and Performance', where: 'Shiv Nadar University' },
+      { year: '2024', what: 'BVA', where: 'Maharaja Sayajirao University, Baroda' },
+      { year: '2019', what: 'Schooling', where: 'Maharani Gayatri Devi Girls’ School' },
+    ],
+  },
+  {
+    heading: 'Awards',
+    rows: [
+      { year: '2020', what: 'Gold, Clay Modelling and Installation', where: 'AIU All India Nationals, Amity University, Noida' },
+      { year: '2020', what: 'Gold, Clay Modelling; Silver, Installation', where: '35th AIU Youth Festival, North Zone' },
+      { year: '2019', what: 'Gold, Installation; Silver, Pakkhi Making', where: 'Inter-college competition, Chandigarh University' },
+    ],
+  },
+  {
+    heading: 'Shows',
+    rows: [
+      { year: '2026', what: 'Group exhibition', where: 'Jaipur Centre for Art × RMZ Foundation, City Palace, Jaipur' },
+      { year: '2026', what: 'Thesis show', where: 'Shiv Nadar University' },
+      { year: '2025', what: 'Image after Image: First Draft', where: 'Shiv Nadar Institution of Eminence' },
+      { year: '2024', what: 'Degree show', where: 'Maharaja Sayajirao University, Baroda' },
+      { year: '2023', what: 'Installation, Rann Utsav', where: 'Kutch, Gujarat' },
+      { year: '2023', what: 'Upaantya, BVA III sculpture preview', where: 'Faculty of Fine Arts, Vadodara' },
+    ],
+  },
+  {
+    heading: 'Workshops and teaching',
+    rows: [
+      { year: '2026', what: 'Studio Intensive', where: 'Jaipur Centre for Art × RMZ Foundation, City Palace, Jaipur' },
+      { year: '2026', what: 'Artist assistant and intern to Vipul Kumar' },
+      { year: '2025', what: 'Block printing instructor', where: 'Bagru, Rajasthan' },
+      { year: '2024', what: 'Alternative photographic printing with Avinash Aggarwal', where: 'Studio a89, Kaladham, Greater Noida' },
+      { year: '2023', what: 'Ceramic workshop with Falguni Bhat', where: 'Faculty of Fine Arts, Vadodara' },
+      { year: '2023', what: 'Faculty, ABHYASA 2.0 art retreat', where: 'Vinyasa' },
+      { year: '2022', what: 'Faculty, clay modelling, ABHYASA art retreat', where: 'Vinyasa' },
+      { year: '2022', what: 'Wood carving camp', where: 'MS University, Baroda' },
+      { year: '2020', what: 'Sculpture camp', where: 'Meluha, Jaipur' },
+    ],
+  },
+  {
+    heading: 'Building',
+    rows: [
+      { year: '2024', what: 'Natural building project', where: 'Idika Staycation, Hyderabad' },
+      { year: '2020', what: 'Interiors, exterior textures and murals for the cottages', where: 'Vinyasa, The Dance Ashram, Jaipur' },
+    ],
+  },
+]
+
+const RESUME: Record<'en', { title: string; cvTitle: string; entries: ResumeEntry[] }> = {
   en: {
     title: 'About me',
+    cvTitle: 'Study, shows and teaching',
     entries: [
       {
         period: 'Shelter',
@@ -52,56 +104,6 @@ const RESUME: Record<'en', { title: string; entries: ResumeEntry[] }> = {
         period: 'Study and shows',
         place: 'Where I learned',
         text: 'I did my MFA in Art, Media and Performance at Shiv Nadar University, after a BVA at MSU Baroda and MGD before that. Gaara is what those years turned into.',
-        groups: [
-          {
-            heading: 'Study',
-            rows: [
-              { year: '2026', what: 'MFA, Art, Media and Performance', where: 'Shiv Nadar University' },
-              { year: '2024', what: 'BVA', where: 'Maharaja Sayajirao University, Baroda' },
-              { year: '2019', what: 'Schooling', where: 'Maharani Gayatri Devi Girls’ School' },
-            ],
-          },
-          {
-            heading: 'Awards',
-            rows: [
-              { year: '2020', what: 'Gold, Clay Modelling and Installation', where: 'AIU All India Nationals, Amity University, Noida' },
-              { year: '2020', what: 'Gold, Clay Modelling; Silver, Installation', where: '35th AIU Youth Festival, North Zone' },
-              { year: '2019', what: 'Gold, Installation; Silver, Pakkhi Making', where: 'Inter-college competition, Chandigarh University' },
-            ],
-          },
-          {
-            heading: 'Shows',
-            rows: [
-              { year: '2026', what: 'Group exhibition', where: 'Jaipur Centre for Art × RMZ Foundation, City Palace, Jaipur' },
-              { year: '2026', what: 'Thesis show', where: 'Shiv Nadar University' },
-              { year: '2025', what: 'Image after Image: First Draft', where: 'Shiv Nadar Institution of Eminence' },
-              { year: '2024', what: 'Degree show', where: 'Maharaja Sayajirao University, Baroda' },
-              { year: '2023', what: 'Installation, Rann Utsav', where: 'Kutch, Gujarat' },
-              { year: '2023', what: 'Upaantya, BVA III sculpture preview', where: 'Faculty of Fine Arts, Vadodara' },
-            ],
-          },
-          {
-            heading: 'Workshops and teaching',
-            rows: [
-              { year: '2026', what: 'Studio Intensive', where: 'Jaipur Centre for Art × RMZ Foundation, City Palace, Jaipur' },
-              { year: '2026', what: 'Artist assistant and intern to Vipul Kumar' },
-              { year: '2025', what: 'Block printing instructor', where: 'Bagru, Rajasthan' },
-              { year: '2024', what: 'Alternative photographic printing with Avinash Aggarwal', where: 'Studio a89, Kaladham, Greater Noida' },
-              { year: '2023', what: 'Ceramic workshop with Falguni Bhat', where: 'Faculty of Fine Arts, Vadodara' },
-              { year: '2023', what: 'Faculty, ABHYASA 2.0 art retreat', where: 'Vinyasa' },
-              { year: '2022', what: 'Faculty, clay modelling, ABHYASA art retreat', where: 'Vinyasa' },
-              { year: '2022', what: 'Wood carving camp', where: 'MS University, Baroda' },
-              { year: '2020', what: 'Sculpture camp', where: 'Meluha, Jaipur' },
-            ],
-          },
-          {
-            heading: 'Building',
-            rows: [
-              { year: '2024', what: 'Natural building project', where: 'Idika Staycation, Hyderabad' },
-              { year: '2020', what: 'Interiors, exterior textures and murals for the cottages', where: 'Vinyasa, The Dance Ashram, Jaipur' },
-            ],
-          },
-        ],
       },
     ],
   },
@@ -229,21 +231,31 @@ function Entry({ entry, index }: { entry: ResumeEntry; index: number }) {
 export default function Resume({ lang }: { lang: 'en' }) {
   const data = RESUME[lang]
   return (
-    <section className="resume" lang={lang}>
-      <motion.h2
-        className="resume-title"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-10% 0px' }}
-        transition={{ duration: 0.7, ease: EASE }}
-      >
-        {data.title}
-      </motion.h2>
-      <div className="timeline">
-        {data.entries.map((e, i) => (
-          <Entry key={i} entry={e} index={i} />
-        ))}
-      </div>
-    </section>
+    <>
+      <section className="resume" lang={lang}>
+        <motion.h2
+          className="resume-title"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-10% 0px' }}
+          transition={{ duration: 0.7, ease: EASE }}
+        >
+          {data.title}
+        </motion.h2>
+        <div className="timeline">
+          {data.entries.map((e, i) => (
+            <Entry key={i} entry={e} index={i} />
+          ))}
+        </div>
+      </section>
+      <section className="cv" lang={lang}>
+        <h2 className="cv-title">{data.cvTitle}</h2>
+        <div className="cv-grid">
+          {CV.map((g, i) => (
+            <Group key={i} group={g} />
+          ))}
+        </div>
+      </section>
+    </>
   )
 }

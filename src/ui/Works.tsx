@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type Ref } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
@@ -126,8 +127,8 @@ function SectionWorks({
   )
 }
 
-// 全屏沉浸详情：渲染该作品的 md（banner + 标题 + markdown 正文 + 外链）；
-// 无 md 时回退到占位 banner + meta/标签简介
+const PHOTO = /!\[([^\]]*)\]\(([^)]+)\)/g
+
 function WorkDetail({
   item,
   data,
@@ -137,83 +138,84 @@ function WorkDetail({
   data: WorksLang
   onClose: () => void
 }) {
-  const [bannerError, setBannerError] = useState(false)
   const doc = getWorkDoc(item.slug)
   const title = (doc && doc.title) || item.name
-  const banner = doc && doc.banner
-  // 有 md 详情时展示完整信息；无 md 时详情页只保留标题 + 统一占位文案
+  const body = doc?.body ?? ''
+  const photos = [
+    ...(doc?.banner ? [{ src: doc.banner, alt: title }] : []),
+    ...Array.from(body.matchAll(PHOTO), (m) => ({ src: m[2], alt: m[1] })),
+  ]
+  const notes = body.replace(PHOTO, '').trim()
   const link = doc ? doc.link || item.link : null
-  const tags = doc ? doc.tags || item.tags : null
-  // 副标题不含年份；标签单独做 badge 展示
-  const sub = item.meta ?? ''
+  const stripRef = useRef<HTMLDivElement>(null)
+
+  const step = (dir: number) => {
+    const strip = stripRef.current
+    if (strip) strip.scrollBy({ left: dir * strip.clientWidth * 0.8, behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    const strip = stripRef.current
+    if (!strip) return
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX) || strip.scrollWidth <= strip.clientWidth) return
+      e.preventDefault()
+      strip.scrollLeft += e.deltaY
+    }
+    strip.addEventListener('wheel', onWheel, { passive: false })
+    return () => strip.removeEventListener('wheel', onWheel)
+  }, [])
 
   return (
-    <>
-      <motion.div
-        className="wk-detail-backdrop"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.3 }}
-        onClick={onClose}
-      />
-      <motion.div
-        className="wk-detail"
-        initial={{ opacity: 0, scale: 0.985, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.99, y: 6 }}
-        transition={{ duration: 0.42, ease: EASE }}
-      >
-        <button className="wk-detail-close" onClick={onClose} aria-label={data.closeLabel}>
-          ✕
-        </button>
+    <motion.div
+      className="wk-detail"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.35, ease: EASE }}
+    >
+      <button className="wk-detail-close" onClick={onClose} aria-label={data.closeLabel}>
+        ✕
+      </button>
 
-        {banner && !bannerError ? (
-          <div className="wk-detail-banner">
-            <img src={banner} alt={title} onError={() => setBannerError(true)} />
-          </div>
-        ) : (
-          <div className="wk-detail-banner is-ph" aria-hidden="true">
-            <span className="wk-detail-ph-text">{title}</span>
+      <div className="wk-detail-strip" ref={stripRef}>
+        {photos.map((p, i) => (
+          <img key={p.src} src={p.src} alt={p.alt} loading={i < 2 ? 'eager' : 'lazy'} />
+        ))}
+      </div>
+
+      <article className="wk-detail-article">
+        <h3 className="wk-detail-title">{title}</h3>
+        {item.meta && <div className="wk-detail-sub">{item.meta}</div>}
+        {item.tags && item.tags.length > 0 && <div className="wk-detail-sub">{item.tags.join(' · ')}</div>}
+        {notes && (
+          <div className="wk-md">
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+              {notes}
+            </ReactMarkdown>
           </div>
         )}
-
-        <article className="wk-detail-article">
-          <header className="wk-detail-head">
-            <h3 className="wk-detail-title">{title}</h3>
-            {sub && <div className="wk-detail-sub">{sub}</div>}
-            {tags && tags.length > 0 && (
-              <div className="wk-detail-tags">
-                {tags.map((t, i) => (
-                  <span key={i} className="wk-badge">
-                    {t}
-                  </span>
-                ))}
-              </div>
-            )}
-          </header>
-
-          {doc?.body && (
-            <div className="wk-md">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                {doc.body}
-              </ReactMarkdown>
-            </div>
-          )}
-
-          {link && (
-            <a
-              className="wk-detail-link"
-              href={link}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {data.visitLabel} <span aria-hidden="true">↗</span>
-            </a>
-          )}
-        </article>
-      </motion.div>
-    </>
+        {photos.length > 1 && (
+          <div className="wk-detail-steps">
+            <button onClick={() => step(-1)} aria-label={data.prevLabel}>
+              ←
+            </button>
+            <span>{data.photosLabel(photos.length)}</span>
+            <button onClick={() => step(1)} aria-label={data.nextLabel}>
+              →
+            </button>
+          </div>
+        )}
+        {link && (
+          <a className="wk-detail-link" href={link} target="_blank" rel="noopener noreferrer">
+            {data.visitLabel} <span aria-hidden="true">↗</span>
+          </a>
+        )}
+      </article>
+    </motion.div>
   )
 }
 
@@ -235,9 +237,29 @@ export default function Works({ lang, innerRef }: { lang: 'en'; innerRef: Ref<HT
     window.scrollTo({ top, behavior: still ? 'auto' : 'smooth' })
   }
 
+  const open = (item: WorkListItem) => {
+    history.pushState({ work: item.slug }, '', `#${item.slug}`)
+    setActive(item)
+  }
+
+  const close = () => {
+    if (history.state?.work) return history.back()
+    history.replaceState(null, '', location.pathname + location.search)
+    setActive(null)
+  }
+
+  useEffect(() => {
+    const slug = location.hash.slice(1)
+    const linked = sections.flatMap((s) => s.items ?? []).find((it) => it.slug === slug)
+    if (linked) setActive(linked)
+    const onPop = () => setActive(null)
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [sections])
+
   useEffect(() => {
     if (!active) return
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setActive(null)
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close()
     window.addEventListener('keydown', onKey)
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -268,19 +290,17 @@ export default function Works({ lang, innerRef }: { lang: 'en'; innerRef: Ref<HT
           </nav>
         </header>
 
-        <SectionCard key={section.id} section={section} data={data} onOpen={setActive} />
+        <SectionCard key={section.id} section={section} data={data} onOpen={open} />
       </div>
 
-      <AnimatePresence>
-        {active && (
-          <WorkDetail
-            key={active.slug || active.name}
-            item={active}
-            data={data}
-            onClose={() => setActive(null)}
-          />
-        )}
-      </AnimatePresence>
+      {createPortal(
+        <AnimatePresence>
+          {active && (
+            <WorkDetail key={active.slug || active.name} item={active} data={data} onClose={close} />
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </section>
   )
 }

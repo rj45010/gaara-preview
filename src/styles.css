@@ -515,6 +515,33 @@ canvas {
   color: rgba(244, 241, 234, 0.6);
 }
 
+/* ---------- CV: full screen, opaque, between About me and Works ---------- */
+.cv {
+  position: relative;
+  min-height: 100vh;
+  padding: clamp(72px, 14vh, 150px) clamp(20px, 6vw, 96px) clamp(72px, 12vh, 130px);
+  background: #11151b;
+}
+
+.cv-title {
+  font-family: 'Cormorant Upright', 'PingFang SC', serif;
+  font-weight: 600;
+  font-size: clamp(28px, 5vw, 56px);
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.cv-grid {
+  margin-top: clamp(24px, 6vh, 64px);
+  columns: 3 300px;
+  column-gap: clamp(32px, 5vw, 72px);
+}
+
+.cv .tl-group {
+  margin: 0 0 clamp(28px, 5vh, 48px);
+  break-inside: avoid;
+}
+
 .tl-group-head {
   display: flex;
   align-items: center;
@@ -1169,143 +1196,129 @@ canvas {
   line-height: 1.5;
 }
 
-/* ---------- 作品全屏沉浸详情 ---------- */
-.wk-detail-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 65;
-  background: rgba(4, 6, 10, 0.6);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-
+/* ---------- Work page: full screen, photos in a sideways strip ---------- */
 .wk-detail {
   position: fixed;
-  inset: clamp(16px, 5vh, 56px) clamp(16px, 6vw, 120px);
-  z-index: 70;
-  /* 指定背景色 #1d2124（深炭蓝灰） */
-  background: rgba(29, 33, 36, 0.98);
-  border: 1px solid var(--line);
-  border-radius: 20px;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  box-shadow: 0 50px 140px rgba(0, 0, 0, 0.6);
-  /* 弱化滚动条（Firefox） */
-  scrollbar-width: thin;
-  scrollbar-color: rgba(244, 241, 234, 0.16) transparent;
+  background: #11151b;
+  scrollbar-width: none;
 }
-/* 弱化滚动条（WebKit）：细、透明轨道、半透明圆角滑块，hover 略显 */
 .wk-detail::-webkit-scrollbar {
-  width: 8px;
-}
-.wk-detail::-webkit-scrollbar-track {
-  background: transparent;
-}
-.wk-detail::-webkit-scrollbar-thumb {
-  background: rgba(244, 241, 234, 0.14);
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-.wk-detail::-webkit-scrollbar-thumb:hover {
-  background: rgba(244, 241, 234, 0.28);
-  background-clip: padding-box;
+  display: none;
 }
 
 .wk-detail-close {
-  position: absolute;
+  position: fixed;
   top: 16px;
   right: 16px;
   z-index: 2;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 1px solid var(--line);
   background: rgba(10, 13, 20, 0.55);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   color: var(--ink);
   font-size: 15px;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 .wk-detail-close:hover {
   background: rgba(20, 26, 38, 0.8);
-  border-color: rgba(244, 241, 234, 0.3);
   transform: rotate(90deg);
 }
 
-/* 顶部 banner：图铺满；缺省时低饱和墨绿渐变占位 + 虚字 */
-.wk-detail-banner {
-  position: relative;
-  height: clamp(180px, 42vh, 460px);
-  background: #1d2124;
+.wk-detail-strip {
+  flex: none;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 72px 16px 0;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 16px;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
 }
-.wk-detail-banner img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+.wk-detail-strip::-webkit-scrollbar {
+  display: none;
 }
-.wk-detail-banner.is-ph {
-  display: grid;
-  place-items: center;
-  padding: 6vh 8vw;
-  background: radial-gradient(120% 120% at 30% 20%, rgba(48, 55, 60, 0.5), rgba(29, 33, 36, 0.98));
-}
-.wk-detail-ph-text {
-  font-family: 'Cormorant Upright', 'Chiron GoRound TC', 'PingFang SC', serif;
-  font-size: clamp(28px, 5vw, 72px);
-  font-weight: 600;
-  line-height: 1.1;
-  text-align: center;
-  color: rgba(244, 241, 234, 0.16);
-  letter-spacing: 0.02em;
+/* Photos keep the proportion they were shot at: fixed height, width follows */
+.wk-detail-strip img {
+  flex: none;
+  width: auto;
+  height: auto;
+  max-height: 56vh;
+  max-width: calc(100vw - 48px);
+  border-radius: 4px;
+  scroll-snap-align: start;
 }
 
-/* 正文文章：居中窄栏，舒适阅读宽度 */
 .wk-detail-article {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: clamp(28px, 5vh, 56px) clamp(24px, 5vw, 56px) clamp(40px, 8vh, 88px);
-}
-.wk-detail-head {
-  padding-bottom: clamp(20px, 3vh, 30px);
-  margin-bottom: clamp(24px, 4vh, 40px);
-  border-bottom: 1px solid var(--line);
+  padding: 28px 16px 56px;
+  max-width: 40em;
 }
 .wk-detail-title {
-  font-size: clamp(24px, 3.4vw, 42px);
+  font-size: clamp(22px, 2.4vw, 32px);
   font-weight: 600;
-  line-height: 1.08;
+  line-height: 1.1;
   color: var(--ink);
 }
 .wk-detail-sub {
-  margin-top: 0.7em;
-  font-size: clamp(12px, 1.2vw, 14px);
-  letter-spacing: 0.08em;
+  margin-top: 0.6em;
+  font-size: 14px;
   color: var(--muted);
 }
-.wk-detail-tags {
+.wk-detail-article .wk-md {
+  margin-top: 1.6em;
+}
+
+.wk-detail-steps {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 1.1em;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+  font-size: 13px;
+  color: var(--muted);
 }
-.wk-badge {
-  font-size: clamp(11px, 1.1vw, 12px);
-  letter-spacing: 0.04em;
-  line-height: 1;
-  padding: 6px 12px;
-  border-radius: 999px;
-  color: rgba(244, 241, 234, 0.78);
-  background: rgba(244, 241, 234, 0.05);
+.wk-detail-steps button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   border: 1px solid var(--line);
+  background: none;
+  color: var(--ink);
+  font-size: 16px;
+  cursor: pointer;
 }
-.wk-detail-desc {
-  font-size: clamp(14px, 1.4vw, 16px);
-  line-height: 1.8;
-  color: rgba(244, 241, 234, 0.8);
+.wk-detail-steps button:hover {
+  background: rgba(244, 241, 234, 0.08);
+}
+
+@media (min-width: 900px) {
+  .wk-detail {
+    display: grid;
+    grid-template-columns: minmax(320px, 30vw) 1fr;
+    overflow: hidden;
+  }
+  .wk-detail-article {
+    order: -1;
+    overflow-y: auto;
+    padding: 96px 40px 56px 56px;
+    scrollbar-width: none;
+  }
+  .wk-detail-strip {
+    padding: 56px 56px 56px 0;
+    scroll-padding: 0;
+  }
+  .wk-detail-strip img {
+    height: 100%;
+    max-height: none;
+    max-width: none;
+  }
 }
 
 /* markdown 正文排版 */
@@ -1395,40 +1408,6 @@ canvas {
 .wk-detail-link:hover {
   background: rgba(255, 217, 179, 0.1);
   gap: 0.9em;
-}
-
-/* 详情占位组件：开源版无 md 内容时，演示详情页支持的「图片/视频 + 跳转按钮」等组件 */
-.wk-detail-ph-img {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  margin: 1.6em 0;
-  border-radius: 12px;
-  border: 1px dashed var(--line);
-  background: repeating-linear-gradient(
-    45deg,
-    rgba(244, 241, 234, 0.03),
-    rgba(244, 241, 234, 0.03) 10px,
-    rgba(244, 241, 234, 0.05) 10px,
-    rgba(244, 241, 234, 0.05) 20px
-  );
-}
-.wk-detail-ph-img-label {
-  font-size: clamp(12px, 1.2vw, 14px);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(244, 241, 234, 0.32);
-}
-.wk-detail-link.is-ph {
-  color: rgba(244, 241, 234, 0.4);
-  border-color: var(--line);
-  border-style: dashed;
-  cursor: default;
-}
-.wk-detail-link.is-ph:hover {
-  background: none;
-  gap: 0.6em;
 }
 
 /* ---------- 加载遮罩：模型全部加载完成前覆盖全屏（进度环，无文字）---------- */

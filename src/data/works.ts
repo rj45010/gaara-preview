@@ -49,6 +49,9 @@ export interface WorksLang {
   phImageLabel: string
   phButtonLabel: string
   countLabel: (n: number) => string
+  photosLabel: (n: number) => string
+  prevLabel: string
+  nextLabel: string
   sections: WorkSection[]
 }
 
@@ -65,6 +68,9 @@ export const WORKS: Record<'en', WorksLang> = {
     phImageLabel: '',
     phButtonLabel: '',
     countLabel: (n) => `${n} ${n === 1 ? 'work' : 'works'}`,
+    photosLabel: (n) => `${n} photos`,
+    prevLabel: 'Previous photo',
+    nextLabel: 'Next photo',
     sections: [
       {
         id: '2026',
