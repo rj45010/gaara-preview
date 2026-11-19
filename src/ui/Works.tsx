@@ -164,11 +164,16 @@ function WorkDetail({
     const strip = stripRef.current
     const view = viewRef.current
     if (!strip || !view) return
-    const measure = () => setTravel(Math.max(0, strip.scrollWidth - view.clientWidth))
+    const desktop = window.matchMedia('(min-width: 900px)')
+    const measure = () => setTravel(desktop.matches ? Math.max(0, strip.scrollWidth - view.clientWidth) : 0)
     const observer = new ResizeObserver(measure)
     observer.observe(strip)
     observer.observe(view)
-    return () => observer.disconnect()
+    desktop.addEventListener('change', measure)
+    return () => {
+      observer.disconnect()
+      desktop.removeEventListener('change', measure)
+    }
   }, [])
 
   useEffect(() => {
