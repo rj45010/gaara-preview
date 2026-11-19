@@ -26,7 +26,7 @@ function Lights() {
     keyColor: '#ffd9c6',
     keyPos: [5, 8, 5] as [number, number, number],
     fillIntensity: 2.25,
-    fillColor: '#9fc6ff',
+    fillColor: '#fff0e0',
     fillPos: [-5, 4, -4] as [number, number, number],
   }
 
@@ -99,7 +99,8 @@ function Man2({
     let focusNode: any = null
     clone.traverse((o: any) => {
       if (o.isMesh) {
-        o.castShadow = true
+        o.castShadow = !/^room-(floor|ceiling|back|left|right|lintel|far)/.test(o.name)
+        if (/^room-/.test(o.name)) o.material.toneMapped = false
         o.receiveShadow = true
       }
       if (o.isCamera) glbCam = o
@@ -459,7 +460,7 @@ function Post2({
   const post = {
     bloomIntensity: 0.6,
     bloomThreshold: 0.82,
-    dof: true,
+    dof: false,
     startBokeh: 7.4,
     startRange: 2.0,
     focusBokeh: 11.0,

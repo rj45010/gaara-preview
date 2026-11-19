@@ -5,7 +5,7 @@ import { DoubleSide, Vector2 } from 'three'
 
 // 全屏胶片噪点蒙层（移植自 speakio 首页）：独立 Canvas + multiply 混合，
 // frameloop="demand" 节流到 ~0.8fps，几乎不占性能。
-const CONFIG = { zIndex: 100, opacity: 0.5, alpha: 1 }
+const CONFIG = { zIndex: 100, opacity: 0.55, alpha: 1 }
 const SHADER_VERSION = 'noise-v1'
 const num = (v: number) => v.toFixed(3)
 
@@ -23,35 +23,16 @@ const fragmentShader = /* glsl */ `
   varying vec2 vUv;
 
   float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
-  }
-
-  float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    float a = hash(i);
-    float b = hash(i + vec2(1.0, 0.0));
-    float c = hash(i + vec2(0.0, 1.0));
-    float d = hash(i + vec2(1.0, 1.0));
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(a, b, u.x)
-      + (c - a) * u.y * (1.0 - u.x)
-      + (d - b) * u.x * u.y;
+    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
   }
 
   void main() {
     vec2 pixel = gl_FragCoord.xy;
     float frame = uTime;
-    float mask = noise(pixel / uResolution.y * 30.0 + 1000.0*hash(vec2(frame * 0.1))) * 0.2;
-    mask = smoothstep(0.005, 0.03, mask);
-    float b = noise(pixel / uResolution.y * 30.0 + 1000.0*hash(vec2(frame * 0.1))) * 0.2;
-    b += noise(pixel / uResolution.y * 60.0 + 1000.0*hash(vec2(frame * 0.2))) * 0.5;
-    b = clamp(b, 0.0, 1.0);
-    b = smoothstep(0.1, 0.12, b);
-    vec3 color = mix(vec3(0.2, 0.4, 0.45), vec3(1.0, 1.4, 1.3), b);
-    color += vec3(mask);
-    color *= hash(pixel / uResolution.y * 200.0 + 1000.0*hash(vec2(frame * 0.3))) * 4.0;
-    color = clamp(color, 0.0, 1.0);
+    float grain = hash(pixel + floor(frame) * 61.0);
+    vec3 color = vec3(1.0 - 0.35 * grain);
     gl_FragColor = vec4(color, ${num(CONFIG.alpha)});
   }
 `
