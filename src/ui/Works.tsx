@@ -147,24 +147,6 @@ function WorkDetail({
   ]
   const notes = body.replace(PHOTO, '').trim()
   const link = doc ? doc.link || item.link : null
-  const stripRef = useRef<HTMLDivElement>(null)
-
-  const step = (dir: number) => {
-    const strip = stripRef.current
-    if (strip) strip.scrollBy({ left: dir * strip.clientWidth * 0.8, behavior: 'smooth' })
-  }
-
-  useEffect(() => {
-    const strip = stripRef.current
-    if (!strip) return
-    const onWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX) || strip.scrollWidth <= strip.clientWidth) return
-      e.preventDefault()
-      strip.scrollLeft += e.deltaY
-    }
-    strip.addEventListener('wheel', onWheel, { passive: false })
-    return () => strip.removeEventListener('wheel', onWheel)
-  }, [])
 
   return (
     <motion.div
@@ -181,12 +163,6 @@ function WorkDetail({
         ✕
       </button>
 
-      <div className="wk-detail-strip" ref={stripRef}>
-        {photos.map((p, i) => (
-          <img key={p.src} src={p.src} alt={p.alt} loading={i < 2 ? 'eager' : 'lazy'} />
-        ))}
-      </div>
-
       <article className="wk-detail-article">
         <h3 className="wk-detail-title">{title}</h3>
         {item.meta && <div className="wk-detail-sub">{item.meta}</div>}
@@ -198,23 +174,18 @@ function WorkDetail({
             </ReactMarkdown>
           </div>
         )}
-        {photos.length > 1 && (
-          <div className="wk-detail-steps">
-            <button onClick={() => step(-1)} aria-label={data.prevLabel}>
-              ←
-            </button>
-            <span>{data.photosLabel(photos.length)}</span>
-            <button onClick={() => step(1)} aria-label={data.nextLabel}>
-              →
-            </button>
-          </div>
-        )}
         {link && (
           <a className="wk-detail-link" href={link} target="_blank" rel="noopener noreferrer">
             {data.visitLabel} <span aria-hidden="true">↗</span>
           </a>
         )}
       </article>
+
+      <div className="wk-detail-photos">
+        {photos.map((p, i) => (
+          <img key={p.src} src={p.src} alt={p.alt} loading={i < 2 ? 'eager' : 'lazy'} />
+        ))}
+      </div>
     </motion.div>
   )
 }

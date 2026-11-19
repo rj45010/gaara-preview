@@ -520,7 +520,10 @@ canvas {
   position: relative;
   min-height: 100vh;
   padding: clamp(72px, 14vh, 150px) clamp(20px, 6vw, 96px) clamp(72px, 12vh, 130px);
-  background: #11151b;
+  /* Frosted over the gallery, so the room stays faintly visible behind the CV */
+  background: rgba(10, 13, 20, 0.45);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
 }
 
 .cv-title {
@@ -1231,30 +1234,20 @@ canvas {
   transform: rotate(90deg);
 }
 
-.wk-detail-strip {
-  flex: none;
+.wk-detail-photos {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
   align-items: center;
-  padding: 72px 16px 0;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-padding: 0 16px;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
+  gap: 16px;
+  padding: 0 16px 56px;
 }
-.wk-detail-strip::-webkit-scrollbar {
-  display: none;
-}
-/* Photos keep the proportion they were shot at: fixed height, width follows */
-.wk-detail-strip img {
-  flex: none;
+/* Photos keep the proportion they were shot at: capped by height, width follows */
+.wk-detail-photos img {
   width: auto;
   height: auto;
-  max-height: 56vh;
-  max-width: calc(100vw - 48px);
+  max-width: 100%;
+  max-height: 80vh;
   border-radius: 4px;
-  scroll-snap-align: start;
 }
 
 .wk-detail-article {
@@ -1276,48 +1269,26 @@ canvas {
   margin-top: 1.6em;
 }
 
-.wk-detail-steps {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 28px;
-  font-size: 13px;
-  color: var(--muted);
-}
-.wk-detail-steps button {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1px solid var(--line);
-  background: none;
-  color: var(--ink);
-  font-size: 16px;
-  cursor: pointer;
-}
-.wk-detail-steps button:hover {
-  background: rgba(244, 241, 234, 0.08);
-}
-
 @media (min-width: 900px) {
   .wk-detail {
     display: grid;
     grid-template-columns: minmax(320px, 30vw) 1fr;
-    overflow: hidden;
+    align-items: start;
   }
   .wk-detail-article {
-    order: -1;
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
     overflow-y: auto;
     padding: 96px 40px 56px 56px;
     scrollbar-width: none;
   }
-  .wk-detail-strip {
+  .wk-detail-photos {
+    gap: 32px;
     padding: 56px 56px 56px 0;
-    scroll-padding: 0;
   }
-  .wk-detail-strip img {
-    height: 100%;
-    max-height: none;
-    max-width: none;
+  .wk-detail-photos img {
+    max-height: calc(100vh - 112px);
   }
 }
 
