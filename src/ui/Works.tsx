@@ -147,10 +147,41 @@ function WorkDetail({
   ]
   const notes = body.replace(PHOTO, '').trim()
   const link = doc ? doc.link || item.link : null
+  const pageRef = useRef<HTMLDivElement>(null)
+  const trackRef = useRef<HTMLDivElement>(null)
+  const viewRef = useRef<HTMLDivElement>(null)
+  const stripRef = useRef<HTMLDivElement>(null)
+  const [travel, setTravel] = useState(0)
+
+  useEffect(() => {
+    const strip = stripRef.current
+    const view = viewRef.current
+    if (!strip || !view) return
+    const measure = () => setTravel(Math.max(0, strip.scrollWidth - view.clientWidth))
+    const observer = new ResizeObserver(measure)
+    observer.observe(strip)
+    observer.observe(view)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const page = pageRef.current
+    const track = trackRef.current
+    const strip = stripRef.current
+    if (!page || !track || !strip) return
+    const onScroll = () => {
+      const moved = Math.min(Math.max(-track.getBoundingClientRect().top, 0), travel)
+      strip.style.transform = `translate3d(${-moved}px, 0, 0)`
+    }
+    onScroll()
+    page.addEventListener('scroll', onScroll, { passive: true })
+    return () => page.removeEventListener('scroll', onScroll)
+  }, [travel])
 
   return (
     <motion.div
       className="wk-detail"
+      ref={pageRef}
       role="dialog"
       aria-modal="true"
       aria-label={title}
@@ -181,10 +212,14 @@ function WorkDetail({
         )}
       </article>
 
-      <div className="wk-detail-photos">
-        {photos.map((p, i) => (
-          <img key={p.src} src={p.src} alt={p.alt} loading={i < 2 ? 'eager' : 'lazy'} />
-        ))}
+      <div className="wk-detail-track" ref={trackRef} style={{ height: `calc(100vh + ${travel}px)` }}>
+        <div className="wk-detail-view" ref={viewRef}>
+          <div className="wk-detail-strip" ref={stripRef}>
+            {photos.map((p) => (
+              <img key={p.src} src={p.src} alt={p.alt} />
+            ))}
+          </div>
+        </div>
       </div>
     </motion.div>
   )

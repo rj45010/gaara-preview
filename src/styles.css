@@ -1234,19 +1234,31 @@ canvas {
   transform: rotate(90deg);
 }
 
-.wk-detail-photos {
+/* Vertical scroll drives the photo row sideways while this panel is pinned */
+.wk-detail-track {
+  flex: none;
+}
+.wk-detail-view {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+}
+.wk-detail-strip {
+  flex: none;
+  display: flex;
   align-items: center;
   gap: 16px;
-  padding: 0 16px 56px;
+  padding: 0 16px;
+  will-change: transform;
 }
-/* Photos keep the proportion they were shot at: capped by height, width follows */
-.wk-detail-photos img {
+/* Photos keep the proportion they were shot at: fixed height, width follows */
+.wk-detail-strip img {
+  flex: none;
+  height: 62vh;
   width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 80vh;
   border-radius: 4px;
 }
 
@@ -1272,7 +1284,7 @@ canvas {
 @media (min-width: 900px) {
   .wk-detail {
     display: grid;
-    grid-template-columns: minmax(320px, 30vw) 1fr;
+    grid-template-columns: minmax(320px, 30vw) minmax(0, 1fr);
     align-items: start;
   }
   .wk-detail-article {
@@ -1283,12 +1295,12 @@ canvas {
     padding: 96px 40px 56px 56px;
     scrollbar-width: none;
   }
-  .wk-detail-photos {
+  .wk-detail-strip {
     gap: 32px;
-    padding: 56px 56px 56px 0;
+    padding: 0 56px 0 0;
   }
-  .wk-detail-photos img {
-    max-height: calc(100vh - 112px);
+  .wk-detail-strip img {
+    height: calc(100vh - 112px);
   }
 }
 
