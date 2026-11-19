@@ -100,11 +100,6 @@ const RESUME: Record<'en', { title: string; cvTitle: string; entries: ResumeEntr
         text: 'Most of what I make is one piece at a time, for a show, a commission or a site. If you are working on something and the material sounds right, write to me and we can talk about what it would take.',
         groups: [{ heading: '@thegaarastudio', links: SOCIAL_LINKS }],
       },
-      {
-        period: 'Study and shows',
-        place: 'Where I learned',
-        text: 'I did my MFA in Art, Media and Performance at Shiv Nadar University, after a BVA at MSU Baroda and MGD before that. Gaara is what those years turned into.',
-      },
     ],
   },
 }
