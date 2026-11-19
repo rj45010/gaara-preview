@@ -10,6 +10,9 @@
 import sys
 from pathlib import Path
 
+import math
+
+import bmesh
 import bpy
 from mathutils import Vector
 
@@ -18,10 +21,15 @@ SOURCE = WEB.parent / "refs" / "shrishti.glb"
 WORKS = WEB / "public" / "works"
 OUT = WEB / "public" / "models" / "shrishti.glb"
 PREVIEW = "--preview" in sys.argv
+QUICK = "--quick" in sys.argv
 
 FACES = 40000
 BUST_HEIGHT = 0.6
 PLINTH = (0.5, 0.5, 1.05)
+SOCLE = ((0, 0), (0.12, 0), (0.12, 0.02), (0.105, 0.03), (0.07, 0.05), (0.06, 0.09), (0.075, 0.11), (0.09, 0.125), (0.09, 0.14), (0, 0.14))
+SEAT = PLINTH[2] + SOCLE[-1][1] - 0.02
+BUST_CUT = (-0.25, 0.95, 0.75)
+FLUTES = 20
 ROOM = (4.5, 3.8)
 BACK_WALL = 3.0
 FRONT_EDGE = -19.0
@@ -88,18 +96,110 @@ def bust_on_plinth():
     decimate = bust.modifiers.new("decimate", "DECIMATE")
     decimate.ratio = FACES / len(bust.data.polygons)
     bpy.ops.object.modifier_apply(modifier=decimate.name)
+    taper(bust)
     for poly in bust.data.polygons:
         poly.use_smooth = True
+    terracotta = material("terracotta", (0.5, 0.17, 0.08), 0.82)
     bust.data.materials.clear()
-    bust.data.materials.append(material("terracotta", (0.5, 0.17, 0.08), 0.82))
+    bust.data.materials.append(terracotta)
 
     pts = [v.co for v in bust.data.vertices]
     lo = Vector([min(p[i] for p in pts) for i in range(3)])
     hi = Vector([max(p[i] for p in pts) for i in range(3)])
     k = BUST_HEIGHT / (hi.z - lo.z)
     bust.scale = (k, k, k)
-    bust.location = (-(lo.x + hi.x) / 2 * k, -(lo.y + hi.y) / 2 * k, PLINTH[2] - lo.z * k)
+    bust.location = (-(lo.x + hi.x) / 2 * k, -(lo.y + hi.y) / 2 * k, SEAT - lo.z * k)
     bpy.ops.object.transform_apply(location=True, scale=True)
+    socle = lathe("socle", SOCLE)
+    socle.location = (0, 0, PLINTH[2])
+    socle.data.materials.append(terracotta)
+
+
+def taper(bust):
+    z0, rx, rz = BUST_CUT
+    bpy.ops.mesh.primitive_cylinder_add(vertices=96, radius=1, depth=3, location=(0, 0, z0), rotation=(math.pi / 2, 0, 0))
+    cutter = bpy.context.active_object
+    cutter.scale = (rx, 1, rz)
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, z0 + 1.5))
+    top = bpy.context.active_object
+    top.scale = (3, 3, 3)
+    union = cutter.modifiers.new("top", "BOOLEAN")
+    union.operation, union.object = "UNION", top
+    bpy.context.view_layer.objects.active = cutter
+    bpy.ops.object.modifier_apply(modifier=union.name)
+    bpy.data.objects.remove(top)
+    cut = bust.modifiers.new("taper", "BOOLEAN")
+    cut.operation, cut.object, cut.solver = "INTERSECT", cutter, "EXACT"
+    bpy.context.view_layer.objects.active = bust
+    bpy.ops.object.modifier_apply(modifier=cut.name)
+    bpy.data.objects.remove(cutter)
+
+
+def lathe(name, profile, steps=64):
+    mesh = bpy.data.meshes.new(name)
+    bm = bmesh.new()
+    verts = [bm.verts.new((r, 0, z)) for r, z in profile]
+    edges = [bm.edges.new((a, b)) for a, b in zip(verts, verts[1:])]
+    bmesh.ops.spin(bm, geom=verts + edges, cent=(0, 0, 0), axis=(0, 0, 1), angle=2 * math.pi, steps=steps)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
+    bm.to_mesh(mesh)
+    bm.free()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    for poly in mesh.polygons:
+        poly.use_smooth = True
+    return obj
+
+
+def fluted_shaft(name, bottom, top, z0, z1, rings=8, steps=160):
+    mesh = bpy.data.meshes.new(name)
+    bm = bmesh.new()
+    grid = []
+    for i in range(rings + 1):
+        t = i / rings
+        radius = bottom + (top - bottom) * t - 0.006 * math.sin(math.pi * t)
+        z = z0 + (z1 - z0) * t
+        grid.append([
+            bm.verts.new((math.cos(a) * r, math.sin(a) * r, z))
+            for a, r in ((2 * math.pi * j / steps, radius * (1 - 0.05 * abs(math.sin(FLUTES / 2 * 2 * math.pi * j / steps)))) for j in range(steps))
+        ])
+    for low, high in zip(grid, grid[1:]):
+        for j in range(steps):
+            bm.faces.new((low[j], low[(j + 1) % steps], high[(j + 1) % steps], high[j]))
+    bm.to_mesh(mesh)
+    bm.free()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    for poly in mesh.polygons:
+        poly.use_smooth = True
+    return obj
+
+
+def column(mat):
+    width, _, height = PLINTH
+    parts = [
+        box("col-plinth", (width, width, 0.06), (0, 0, 0.03), mat),
+        lathe("col-base", ((0.2, 0.06), (0.212, 0.075), (0.212, 0.09), (0.2, 0.1), (0.182, 0.11), (0.17, 0.115))),
+        fluted_shaft("col-shaft", 0.17, 0.152, 0.115, height - 0.11),
+        lathe("col-echinus", ((0.152, height - 0.11), (0.158, height - 0.095), (0.19, height - 0.07), (0.215, height - 0.05))),
+        box("col-abacus", (width * 0.92, width * 0.92, 0.05), (0, 0, height - 0.025), mat),
+    ]
+    for part in parts:
+        if not part.data.materials:
+            part.data.materials.append(mat)
+    bpy.ops.object.select_all(action="DESELECT")
+    for part in parts:
+        part.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+    joined = parts[0]
+    joined.name = "room-plinth"
+    bm = bmesh.new()
+    bm.from_mesh(joined.data)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bm.to_mesh(joined.data)
+    bm.free()
+    return joined
 
 
 def room():
@@ -119,7 +219,7 @@ def room():
         box("room-lintel", (door_w, 0.2, height - door_h), (0, BACK_WALL + 0.1, (height + door_h) / 2), material("lintel", WHITE, 0.95)),
         box("room-far", (half * 2, 0.1, height), (0, far + 0.05, height / 2), material("far", WHITE, 0.95)),
         box("room-partition", (2.6, 0.2, 3.0), (2.4, BACK_WALL + 3.3, 1.5), material("partition", WHITE, 0.95)),
-        box("room-plinth", PLINTH, (0, 0, PLINTH[2] / 2), material("plinth", (0.2, 0.14, 0.1), 0.7)),
+        column(material("marble", (0.86, 0.85, 0.82), 0.45)),
     ]
     black = material("track", (0.02, 0.02, 0.02), 0.5)
     for x in (-half + 1.4, half - 1.4):
@@ -161,7 +261,7 @@ def paintings():
             lamp_at = (x - side * 1.4, y, ROOM[1] - 0.05)
         aim = (x, y, HANG)
         spot(lamp_at, aim, 320)
-    spot((0, -1.0, ROOM[1] - 0.05), (0, 0, PLINTH[2] + 0.3), 300)
+    spot((0, -1.0, ROOM[1] - 0.05), (0, 0, SEAT + 0.3), 300)
 
 
 def spot(at, aim, watts):
@@ -222,7 +322,7 @@ def bake(objs):
         bpy.ops.mesh.select_all(action="SELECT")
         bpy.ops.uv.smart_project(island_margin=0.02)
         bpy.ops.object.mode_set(mode="OBJECT")
-        size = {"room-floor": 2048, "room-lintel": 256, "room-plinth": 512}.get(obj.name, 1024)
+        size = {"room-floor": 2048, "room-lintel": 256, "room-plinth": 1024}.get(obj.name, 1024)
         image = bpy.data.images.new(f"{obj.name}-light", size, size)
         mat = obj.data.materials[0]
         tex = mat.node_tree.nodes.new("ShaderNodeTexImage")
@@ -240,7 +340,7 @@ def bake(objs):
 
 
 def camera_path():
-    head = (0, 0, PLINTH[2] + BUST_HEIGHT * 0.55)
+    head = (0, 0, SEAT + BUST_HEIGHT * 0.55)
     left_wall = (-ROOM[0], -0.4, HANG)
     right_wall = (ROOM[0], -0.4, HANG)
     focus = {
@@ -315,9 +415,10 @@ bust_on_plinth()
 surfaces = room()
 paintings()
 light_room()
-bake(surfaces)
+if not QUICK:
+    bake(surfaces)
 camera_path()
 if PREVIEW:
-    preview([0, 50, 100, 150, 200, 250])
+    preview([50] if QUICK else [0, 50, 100, 150, 200, 250])
 else:
     export()
