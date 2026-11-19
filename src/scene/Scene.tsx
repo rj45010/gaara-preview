@@ -211,6 +211,7 @@ function Man2({
   const camPos = useRef(new THREE.Vector3())
   const camQuat = useRef(new THREE.Quaternion())
   const camScl = useRef(new THREE.Vector3())
+  const roomBox = useRef<THREE.Box3 | null>(null)
   const paraEuler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'))
   const paraQuat = useRef(new THREE.Quaternion())
 
@@ -353,6 +354,12 @@ function Man2({
           camera.translateX(-dist * cam.mobileTimelineShift * tlWeight)
         }
       }
+      if (!roomBox.current) {
+        const floor = model.getObjectByName('room-floor')
+        const ceiling = model.getObjectByName('room-ceiling')
+        if (floor && ceiling) roomBox.current = new THREE.Box3().setFromObject(floor).expandByObject(ceiling).expandByScalar(-0.6)
+      }
+      if (roomBox.current) camera.position.clamp(roomBox.current.min, roomBox.current.max)
       if (camera.fov !== glbCam.fov) {
         camera.fov = glbCam.fov
         camera.updateProjectionMatrix()
