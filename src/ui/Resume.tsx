@@ -12,6 +12,7 @@ interface ResumeGroup {
   sub?: string
   link?: string
   items?: string[]
+  rows?: { year: string; what: string; where?: string }[]
   links?: { id: string; label: string; href: string }[]
 }
 interface ResumeEntry {
@@ -51,30 +52,55 @@ const RESUME: Record<'en', { title: string; entries: ResumeEntry[] }> = {
         period: 'Study and shows',
         place: 'Where I learned',
         text: 'I did my MFA in Art, Media and Performance at Shiv Nadar University, after a BVA at MSU Baroda and MGD before that. Gaara is what those years turned into.',
-        points: [
-          'MFA, Art, Media and Performance, Shiv Nadar University, ’26',
-          'BVA, Maharaja Sayajirao University, Baroda, ’24',
-          'Maharani Gayatri Devi Girls’ School, ’19',
-          'Gold, Clay Modelling and Installation, AIU All India Nationals, Amity University, Noida, ’20',
-          'Gold, Clay Modelling, and Silver, Installation, 35th AIU Youth Festival, North Zone, ’20',
-          'Gold, Installation, and Silver, Pakkhi Making, inter-college competition, Chandigarh University, ’19',
-          'Group exhibition, Jaipur Centre for Art × RMZ Foundation, City Palace, Jaipur, ’26',
-          'Studio Intensive, Jaipur Centre for Art × RMZ Foundation, City Palace, Jaipur, ’26',
-          'Thesis show, Shiv Nadar University, ’26',
-          'Artist assistant and intern to Vipul Kumar, ’26',
-          'Image after Image: First Draft, Shiv Nadar Institution of Eminence, ’25',
-          'Block printing instructor, Bagru, Rajasthan, ’25',
-          'Degree show, Maharaja Sayajirao University, Baroda, ’24',
-          'Natural building project, Idika Staycation, Hyderabad, ’24',
-          'Alternative photographic printing processes with Avinash Aggarwal, Studio a89, Kaladham, Greater Noida, ’24',
-          'Installation, Rann Utsav, Kutch, Gujarat, ’23',
-          'Upaantya, BVA III sculpture preview show, Faculty of Fine Arts, Vadodara, ’23',
-          'Ceramic workshop with Falguni Bhat, Faculty of Fine Arts, Vadodara, ’23',
-          'Faculty, ABHYASA 2.0 art retreat, Vinyasa, ’23',
-          'Faculty, clay modelling, ABHYASA art retreat, Vinyasa, ’22',
-          'Wood carving camp, MS University, Baroda, ’22',
-          'Sculpture camp, Meluha, Jaipur, ’20',
-          'Natural building project, Vinyasa – The Dance Ashram, Jaipur: interiors, exterior textures and murals for the cottages, ’20',
+        groups: [
+          {
+            heading: 'Study',
+            rows: [
+              { year: '2026', what: 'MFA, Art, Media and Performance', where: 'Shiv Nadar University' },
+              { year: '2024', what: 'BVA', where: 'Maharaja Sayajirao University, Baroda' },
+              { year: '2019', what: 'Schooling', where: 'Maharani Gayatri Devi Girls’ School' },
+            ],
+          },
+          {
+            heading: 'Awards',
+            rows: [
+              { year: '2020', what: 'Gold, Clay Modelling and Installation', where: 'AIU All India Nationals, Amity University, Noida' },
+              { year: '2020', what: 'Gold, Clay Modelling; Silver, Installation', where: '35th AIU Youth Festival, North Zone' },
+              { year: '2019', what: 'Gold, Installation; Silver, Pakkhi Making', where: 'Inter-college competition, Chandigarh University' },
+            ],
+          },
+          {
+            heading: 'Shows',
+            rows: [
+              { year: '2026', what: 'Group exhibition', where: 'Jaipur Centre for Art × RMZ Foundation, City Palace, Jaipur' },
+              { year: '2026', what: 'Thesis show', where: 'Shiv Nadar University' },
+              { year: '2025', what: 'Image after Image: First Draft', where: 'Shiv Nadar Institution of Eminence' },
+              { year: '2024', what: 'Degree show', where: 'Maharaja Sayajirao University, Baroda' },
+              { year: '2023', what: 'Installation, Rann Utsav', where: 'Kutch, Gujarat' },
+              { year: '2023', what: 'Upaantya, BVA III sculpture preview', where: 'Faculty of Fine Arts, Vadodara' },
+            ],
+          },
+          {
+            heading: 'Workshops and teaching',
+            rows: [
+              { year: '2026', what: 'Studio Intensive', where: 'Jaipur Centre for Art × RMZ Foundation, City Palace, Jaipur' },
+              { year: '2026', what: 'Artist assistant and intern to Vipul Kumar' },
+              { year: '2025', what: 'Block printing instructor', where: 'Bagru, Rajasthan' },
+              { year: '2024', what: 'Alternative photographic printing with Avinash Aggarwal', where: 'Studio a89, Kaladham, Greater Noida' },
+              { year: '2023', what: 'Ceramic workshop with Falguni Bhat', where: 'Faculty of Fine Arts, Vadodara' },
+              { year: '2023', what: 'Faculty, ABHYASA 2.0 art retreat', where: 'Vinyasa' },
+              { year: '2022', what: 'Faculty, clay modelling, ABHYASA art retreat', where: 'Vinyasa' },
+              { year: '2022', what: 'Wood carving camp', where: 'MS University, Baroda' },
+              { year: '2020', what: 'Sculpture camp', where: 'Meluha, Jaipur' },
+            ],
+          },
+          {
+            heading: 'Building',
+            rows: [
+              { year: '2024', what: 'Natural building project', where: 'Idika Staycation, Hyderabad' },
+              { year: '2020', what: 'Interiors, exterior textures and murals for the cottages', where: 'Vinyasa, The Dance Ashram, Jaipur' },
+            ],
+          },
         ],
       },
     ],
@@ -115,6 +141,19 @@ function Group({ group }: { group: ResumeGroup }) {
         <ul className="tl-points">
           {group.items.map((it, i) => (
             <li key={i}>{it}</li>
+          ))}
+        </ul>
+      )}
+      {group.rows && (
+        <ul className="tl-rows">
+          {group.rows.map((r, i) => (
+            <li key={i} className="tl-row">
+              <span className="tl-row-year">{r.year}</span>
+              <span>
+                {r.what}
+                {r.where && <span className="tl-row-where">{r.where}</span>}
+              </span>
+            </li>
           ))}
         </ul>
       )}

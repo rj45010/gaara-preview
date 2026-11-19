@@ -488,6 +488,33 @@ canvas {
   margin-top: 1.8em;
 }
 
+.tl-rows {
+  margin-top: 0.8em;
+  list-style: none;
+  display: grid;
+  gap: 0.75em;
+}
+
+.tl-row {
+  display: grid;
+  grid-template-columns: 2.6em 1fr;
+  column-gap: 1em;
+  font-size: 14px;
+  line-height: 1.45;
+  color: rgba(244, 241, 234, 0.95);
+}
+
+.tl-row-year {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tl-row-where {
+  display: block;
+  font-size: 13px;
+  color: rgba(244, 241, 234, 0.6);
+}
+
 .tl-group-head {
   display: flex;
   align-items: center;
